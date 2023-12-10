@@ -26,9 +26,4 @@ if __name__ == "__main__":
     try:
         unittest.main()
     except:
-        pass
-'''
-
-pytest  
-
-'''
+        print("Error en los test de la clase User")

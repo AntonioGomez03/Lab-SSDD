@@ -2,9 +2,12 @@
 
 import time
 import Ice
-Ice.loadSlice("icedrive_authentication/icedrive.ice")
-import IceDrive
 from .json_manager import JsonManager as jm
+# ruff-disable-next-line
+Ice.loadSlice("icedrive_authentication/icedrive.ice")
+# ruff-disable-next-line
+import IceDrive
+
 
 users_file="users.json"
 
@@ -59,10 +62,9 @@ class Authentication(IceDrive.Authentication):
     ) -> IceDrive.UserPrx:
         """Authenticate an user by username and password and return its User."""
         if jm.exist_user(username,password,users_file): # Si el usuario existe
-
             # FIXME Se debe comprobar si en la lista de usuarios hay alguno con el mismo nombre y contraseña, no si el objeto está en la lista
             user=User(username,password)
-            if not user in self.users:
+            if user not in self.users:
                 self.users.append(user) # Se añade el usuario a la lista de usuarios
                 newUser_prx=current.adapter.addWithUUID(user) # Se añade el usuario al adaptador
                 self.users_prx.append(newUser_prx) # Se añade el usuario a la lista de usuarios del adaptador
@@ -92,7 +94,6 @@ class Authentication(IceDrive.Authentication):
         self, username: str, password: str, current: Ice.Current = None
     ) -> None:
         """Remove the user "username" if the "password" is correct."""
-        u=User(username,password)
         if jm.exist_user(username,password,users_file):
             for user,user_prx in zip(self.users,self.users_prx):
                 if user.getUsername()==username and user.getPassword()==password:

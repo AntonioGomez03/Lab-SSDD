@@ -25,11 +25,11 @@ class User(IceDrive.User):
         """Check if the authentication is still valid or not."""
         now=time.time()
         print(f"Last refresh: {self.__last_refresh}, Now: {now}")
-        return now-self.__last_refresh<2 #En realidad debería ser 120 (se ha puesto 2 segundos para las pruebas)
+        return now-self.__last_refresh<120 
 
     def refresh(self, current: Ice.Current = None) -> None:
         """Renew the authentication for 1 more period of time."""
-        if time.time()-self.__last_refresh>2: # Si han pasado más de 2 minutos desde el último refresh
+        if time.time()-self.__last_refresh>120: 
             raise IceDrive.Unauthorized()
 
         if not jm.exist_username(self.__username,users_file): # No hay nigun usuario con ese username

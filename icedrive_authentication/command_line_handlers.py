@@ -4,13 +4,11 @@ from .app import ClientApp, AuthenticationApp
 
 
 def client() -> int:
-    """Handler for 'ice-calculator-client'."""
     app = ClientApp()
     return app.main(sys.argv)
 
 
 def server() -> int:
-    """Handler for 'ice-calculator-server'."""
     app = AuthenticationApp()
     return app.main(sys.argv)
 
@@ -19,5 +17,4 @@ if __name__ == "__main__":
         client()
     elif "server" in sys.argv:
         server()
-    else:
-        print("Usage: python ice_calculator.py client|server")
+

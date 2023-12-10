@@ -38,7 +38,6 @@ class ClientApp(Ice.Application):
             return 2
         
         newUser=auth_prx.newUser("pepe","1234")
-        newUser2=auth_prx.newUser("ana","5678")
         user1=auth_prx.login("pepe","1234")
         print(user1.getUsername()+" is alive: "+str(user1.isAlive()))
         time.sleep(3)

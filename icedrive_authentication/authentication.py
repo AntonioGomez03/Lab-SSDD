@@ -22,7 +22,7 @@ class User(IceDrive.User):
     def isAlive(self, current: Ice.Current = None) -> bool:
         """Check if the authentication is still valid or not."""
         now=time.time()
-        return now-self.__last_refresh<120
+        return now-self.__last_refresh<2 #En realidad debería ser 120 (se ha puesto 2 segundos para las pruebas)
 
     def refresh(self, current: Ice.Current = None) -> None:
         """Renew the authentication for 1 more period of time."""
@@ -108,8 +108,3 @@ class Authentication(IceDrive.Authentication):
         Don't check anything related to its authentication state or anything else.
         """
         return user in self.users_prx
-            
-    def __add_user_adapter(self):
-        # TODO 
-    
-    

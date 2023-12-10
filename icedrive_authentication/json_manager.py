@@ -46,12 +46,23 @@ class JsonManager:
     @staticmethod
     def exist_user(username: str, password: str, filename: str) -> bool:
         """Return True if the given user exists in the given filename, False otherwise."""
+        exist=False
         with open(filename, "r") as f:
             data = json.load(f)
         
         for user_info in data["users"]:
             if user_info["username"] == username and user_info["password"] == password:
-                return True
+                exist=True 
+        return exist
+    
+    @staticmethod
+    def exist_username(username:str, filename:str)->bool:
+        exist=False
+        with open(filename, "r") as f:
+            data = json.load(f)
         
-        return False
+        for user_info in data["users"]:
+            if user_info["username"] == username:
+                exist= True    
+        return exist
 

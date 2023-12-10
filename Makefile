@@ -13,7 +13,7 @@ run-client:
 
 delete-users:
 	@echo "Eliminando usuario..."
-	@echo '{"users": []}' > users.json
+	@echo '{"users": []}' > data/users.json
 	@sleep 1 > /dev/null 2>&1 || timeout /nobreak /t 1 > NUL
 	clear
 

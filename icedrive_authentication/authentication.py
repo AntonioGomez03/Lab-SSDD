@@ -2,12 +2,13 @@
 
 import time
 import Ice
+import os
 from .json_manager import JsonManager as jm
 Ice.loadSlice("icedrive_authentication/icedrive.ice")
 import IceDrive # noqa
 
 
-users_file="users.json"
+users_file=os.path.join('data','users.json')
 
 class User(IceDrive.User):
     """Implementation of an IceDrive.User interface."""

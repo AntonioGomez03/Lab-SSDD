@@ -42,78 +42,95 @@ class ClientApp(Ice.Application):
         
 
         # Requisito 1 (Un cliente puede hacer "login" con credenciales válidas y un UserPrx es devuelto)
+        print("Requisito 1\n Creando el usuario con username: user3 y password: pass3")
         user3=auth_prx.newUser("user3","pass3")
         user3_login=auth_prx.login("user3","pass3")
-        print(user3==user3_login) # Además, el proxy devuelto es el mismo que el del usuario creado anteriormente
+        print(f"Comprobación de que los proxies de creación y de login son iguales: {user3==user3_login}\n") # Además, el proxy devuelto es el mismo que el del usuario creado anteriormente
 
         # Requisito 2 (Un cliente con credenciales inválidas al hacer "login" es rechazado)
         try:
+            print("Requisito 2\n Intentando hacer login con credenciales inválidas")
             auth_prx.login("user3","abcd")
         except IceDrive.Unauthorized:
-            print("Req 2 --> Error. Las credenciales no son correctas")
+            print("Req 2 --> Error. Las credenciales no son correctas\n")
 
         # Requisito 3 (Un cliente puede registrarse con "newUser" y un UserPrx es devuelto)
+        print("Requisito 3\n Creando el usuario con username: user1 y password: pass1")
         user1=auth_prx.newUser("user1","pass1")
-        print(user1)
+        print(f"Proxy devuelto: {user1}\n")
 
         # Requisito 4 (Un cliente no puede registrarse si el nombre de usuario ya existe)
         try:
+            print("Requisito 4\n Intentando crear un usuario con un username ya existente")
             auth_prx.newUser("user1","pass2")
         except IceDrive.UserAlreadyExists:
-            print("Req 4 --> Error. El usuario ya existe")
+            print("Req 4 --> Error. El usuario ya existe\n")
 
         # Requisito 6 (Un cliente no puede borrar un usuario sin aportar las credenciales correctas)
         try:
+            print("Requisito 6\n Intentando borrar un usuario sin aportar las credenciales correctas")
             auth_prx.removeUser("user1","pass2") 
         except IceDrive.Unauthorized:
-            print("Req 6 --> Error. No se puede borrar el usuario porque las credenciales no son correctas")
+            print("Req 6 --> Error. No se puede borrar el usuario porque las credenciales no son correctas\n")
 
         # Requisito 5 (Un cliente puede eliminar su usuario con "removeUser")
+        print("Requisito 5\n Eliminando el usuario con username y password correctos\n")
         auth_prx.removeUser("user1","pass1") 
 
         # Requisito 7 (El método "verifyUser" devuelve verdadero para un UserPrx creado a través de "login" o "newUser")
-        print(auth_prx.verifyUser(user3)) 
+        print(f"Requisito 7\n Verificando usuario creado por Authenticator: {auth_prx.verifyUser(user3)}\n") 
 
         # Requisito 8 (El método "verifyUser") devuelve falso para cualquier UserPrx, accesible o no, que no pertenezca a éste servicio)
+        print("Requisito 8\n Verificando usuario eliminado y no accesible")
         user4=auth_prx.newUser("user4","pass4")
         auth_prx.removeUser("user4","pass4")
-        print(auth_prx.verifyUser(user4)) # Se comprueba que el usuario ya no existe
+        print(f"Comprobación de la verificación: {auth_prx.verifyUser(user4)}\n") # Se comprueba que el usuario ya no existe
 
         # Requisito 9 (El método "getUsername" de UserPrx devuelve el nombre del usuario esperado)
+        print("Requisito 9\n Creando el usuario con username: user5 y password: pass5")
         user5=auth_prx.newUser("user5","pass5")
-        print(user5.getUsername())
+        print(f"Username: {user5.getUsername()}\n")
 
         # Requisito 10 (El método "isAlive" de UserPrx devuelve verdadero si han pasado menos de 2 minutos de su creación o del último "refresh")
-        print(user5.isAlive())
+        print("Requisito 10\n Comprobando que el usuario está vivo")
+        print(f"Esta vivo: {user5.isAlive()}\n")
 
         # Requisito 11 (El método "isAlive" de UserPrx devuelve falso si han pasado más de 2 minutos de su creación o del último "refresh")
-        time.sleep(3)
-        print(user5.isAlive())
+        print("Requisito 11\n Comprobando que el usuario no está vivo")
+        print("Esperando 120 segundos")
+        time.sleep(120)
+        print(f"Esta vivo: {user5.isAlive()}\n")
 
         # Requisito 12 (El método "isAlive" de UserPrx devuelve falso si el usuario ha sido eliminado)
+        print("Requisito 12\n Creando el usuario con username: user6 y password: pass6")
         user6=auth_prx.newUser("user6","pass6")
+        print("Eliminando el usuario")
         auth_prx.removeUser("user6","pass6")
         try:
-            print(user6.isAlive())
+            print(f"Esta vivo: {user6.isAlive()}")
         except Ice.ObjectNotExistException:
-            print("Req 12 --> Error. El usuario ya no existe, por lo que no puede llamar ningún método")
+            print("Req 12 --> Error. El usuario ya no existe, por lo que no puede llamar ningún método\n")
 
         # Requisito 13 y 15 (El método "refresh" extiende la duración de las credenciales en 2 minutos) y (El método "refresh" falla con Unauhorized si han pasado más de 2 minutos)
+        print("Requisito 13 y 15\n Creando el usuario con username: user7 y password: pass7")
         user7=auth_prx.newUser("user7","pass7")
+        print("Refrescando el usuario")
         user7.refresh()
-        print(user7.isAlive())
-        print("Esperando 3 segundos")
-        time.sleep(3)
-        print(user7.isAlive())
+        print(f"Esta vivo: {user7.isAlive()}")
+        print("Esperando 120 segundos")
+        time.sleep(120)
+        print(f"Esta vivo: {user7.isAlive()}")
         try:
-            user5.refresh()
+            print("Refrescando el usuario")
+            user7.refresh()
         except IceDrive.Unauthorized:
             print("Req 15 --> Error. Han pasado más de 2 minutos desde el último refresh")
 
         # Requisito 14
+        print("Requisito 14\n Eliminando el usuario")
         auth_prx.removeUser("user7","pass7")
         try:
-            print(user7.isAlive())
+            print(f"Esta vivo: {user7.isAlive()}")
         except Ice.ObjectNotExistException:
             print("Req 14 --> Error. El usuario ya no existe, por lo que no puede llamar ningún método")
 

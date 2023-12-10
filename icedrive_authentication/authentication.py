@@ -24,7 +24,6 @@ class User(IceDrive.User):
     def isAlive(self, current: Ice.Current = None) -> bool:
         """Check if the authentication is still valid or not."""
         now=time.time()
-        print(f"Last refresh: {self.__last_refresh}, Now: {now}")
         return now-self.__last_refresh<120 
 
     def refresh(self, current: Ice.Current = None) -> None:

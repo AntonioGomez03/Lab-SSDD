@@ -3,10 +3,8 @@
 import time
 import Ice
 from .json_manager import JsonManager as jm
-# ruff-disable-next-line
 Ice.loadSlice("icedrive_authentication/icedrive.ice")
-# ruff-disable-next-line
-import IceDrive
+import IceDrive # noqa
 
 
 users_file="users.json"

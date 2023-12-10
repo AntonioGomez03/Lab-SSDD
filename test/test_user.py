@@ -25,5 +25,5 @@ class TestUser(unittest.TestCase):
 if __name__ == "__main__":
     try:
         unittest.main()
-    except:
+    except Exception:
         print("Error en los test de la clase User")

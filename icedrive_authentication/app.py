@@ -5,10 +5,8 @@ from typing import List
 from .authentication import Authentication
 
 import Ice
-# ruff-disable-next-line
 Ice.loadSlice("icedrive_authentication/icedrive.ice")
-# ruff-disable-next-line
-import IceDrive
+import IceDrive # noqa
 
 class AuthenticationApp(Ice.Application):
     """Implementation of the Ice.Application for the Authentication service."""

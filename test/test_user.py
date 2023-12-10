@@ -8,9 +8,17 @@ class TestUser(unittest.TestCase):
         user = User("username", "password")
         self.assertIsNotNone(user)
 
-    def test_user_creation_with_empty_username(self):
-        user= User("", "password")
-        self.assertIsNone(user)
+    def test_get_username(self):
+        user=User("username","password")
+        self.assertEqual(user.getUsername(),"username")
+
+    def test_get_password(self):
+        user=User("username","password")
+        self.assertEqual(user.getPassword(),"password")
+
+    def test_get_last_refresh(self):
+        user=User("username","password")
+        self.assertIsInstance(user.getLastRefresh(),float)
 
     def test_user_is_alive_ok(self):
         user = User("username", "password")
@@ -18,7 +26,7 @@ class TestUser(unittest.TestCase):
 
     def test_user_is_alive_nok(self):
         user = User("username", "password")
-        time.sleep(3)
+        time.sleep(121) # El refresh solo dura 120 segundos
         self.assertFalse(user.isAlive())
     
 

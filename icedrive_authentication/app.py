@@ -4,7 +4,7 @@ import threading
 import time
 import os
 from typing import List
-from .authentication import Authentication
+from .authentication import AuthenticationI, Authentication
 from .delayed_response import AuthenticationQuery
 from .discovery import Discovery
 
@@ -38,9 +38,9 @@ class AuthenticationApp(Ice.Application):
         topic_discovery = self.get_topic("DiscoveryTopic")
         topic_discovery.subscribeAndGetPublisher({}, discovery_prx_subscriber)
 
-    def suscribe_authenticationQuery_topic(self, adapter):
+    def suscribe_authenticationQuery_topic(self, adapter,servant):
         """Suscribe to the discovery topic."""
-        authenticationQuery_subscriber = AuthenticationQuery()
+        authenticationQuery_subscriber = AuthenticationQuery(servant.authentication)
         authenticationQuery_prx_subscriber = adapter.addWithUUID(authenticationQuery_subscriber)
         topic_discovery = self.get_topic("AuthenticationQueryTopic")
         topic_discovery.subscribeAndGetPublisher({}, authenticationQuery_prx_subscriber)
@@ -61,7 +61,8 @@ class AuthenticationApp(Ice.Application):
         topic_authenticationQuery = self.get_topic("AuthenticationQueryTopic")
         authenticationQuery_publisher = IceDrive.AuthenticationQueryPrx.uncheckedCast(topic_authenticationQuery.getPublisher())
 
-        servant=Authentication(authenticationQuery_publisher, adapter)
+
+        servant=AuthenticationI(authenticationQuery_publisher, adapter,Authentication())
         servant_prx=adapter.addWithUUID(servant)
         servant_prx = IceDrive.AuthenticationPrx.uncheckedCast(servant_prx)
 
@@ -75,7 +76,7 @@ class AuthenticationApp(Ice.Application):
         # Publish the discovery topic
         self.publish_discovery_topic(servant_prx)
         # Suscribe to the authenticationQuery topic
-        self.suscribe_authenticationQuery_topic(adapter)
+        self.suscribe_authenticationQuery_topic(adapter,servant)
 
         self.shutdownOnInterrupt()
         self.communicator().waitForShutdown()
@@ -93,14 +94,25 @@ class ClientApp(Ice.Application):
             print(f"Proxy {prx} is invalid")
             return 2
         
+        #auth_prx.newUser("user3","pass3")
+        #auth_prx.login("user4","pass4")
+        
+        a=auth_prx.login("user5","pass5")
+        print(a)
+        time.sleep(2)
+        #auth_prx.removeUser("user5","pass5")
+        print(auth_prx.verifyUser(a))
+        #auth_prx.login("user5","pass5")
+        print("Login correcto")
+        time.sleep(5)
 
         # Requisito 1 (Un cliente puede hacer "login" con credenciales válidas y un UserPrx es devuelto)
         print("Requisito 1\n Creando el usuario con username: user3 y password: pass3")
-        user3=auth_prx.newUser("user3","pass3")
+        user3 = auth_prx.newUser("user3","pass3")
         user3_login=auth_prx.login("user3","pass3")
         print(f"Comprobación de que los proxies de creación y de login son iguales: {user3==user3_login}\n") # Además, el proxy devuelto es el mismo que el del usuario creado anteriormente
 
-        """
+        
         # Requisito 2 (Un cliente con credenciales inválidas al hacer "login" es rechazado)
         try:
             print("Requisito 2\n Intentando hacer login con credenciales inválidas")
@@ -126,11 +138,11 @@ class ClientApp(Ice.Application):
             auth_prx.removeUser("user1","pass2") 
         except IceDrive.Unauthorized:
             print("Req 6 --> Error. No se puede borrar el usuario porque las credenciales no son correctas\n")
-
+        
         # Requisito 5 (Un cliente puede eliminar su usuario con "removeUser")
         print("Requisito 5\n Eliminando el usuario con username y password correctos\n")
         auth_prx.removeUser("user1","pass1") 
-
+        """
         # Requisito 7 (El método "verifyUser" devuelve verdadero para un UserPrx creado a través de "login" o "newUser")
         print(f"Requisito 7\n Verificando usuario creado por Authenticator: {auth_prx.verifyUser(user3)}\n") 
 

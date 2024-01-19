@@ -15,7 +15,7 @@ class Discovery(IceDrive.Discovery):
         """Receive an Authentication service announcement."""
         if prx not in self.authentications:
             self.authentications.add(prx)
-            print(f"Authentication service detected: {prx}")
+            print(f"Authentication service detected: {prx} ******* {type(prx)}")
 
     def announceDirectoryService(self, prx: IceDrive.DirectoryServicePrx, current: Ice.Current = None) -> None:
         """Receive an Directory service announcement."""

@@ -3,6 +3,9 @@
 import time
 import Ice
 import os
+import IceStorm
+from .discovery import Discovery
+from .delayed_response import AuthenticationQueryResponse
 from .json_manager import JsonManager as jm
 Ice.loadSlice("icedrive_authentication/icedrive.ice")
 import IceDrive # noqa
@@ -58,20 +61,18 @@ class User(IceDrive.User):
 
 class Authentication(IceDrive.Authentication):
     """Implementation of an IceDrive.Authentication interface."""
-    def __init__(self):
+    def __init__(self, authenticationQuery_prx, adapter):
         self.users = []
         self.users_prx = []
+        self.authenticationQuery_prx=authenticationQuery_prx
+        self.adapter = adapter
+        self.expected_responses = {}
 
     def login(
         self, username: str, password: str, current: Ice.Current = None
-    ) -> IceDrive.UserPrx:
+    ) -> IceDrive.UserPrx:      
         """Authenticate an user by username and password and return its User."""
-        if jm.exist_user(username,password,users_file): # Si el usuario existe
-            user=User(username,password)
-            newUser_prx=self.__getOrAddUserProxy(user,current.adapter) # Se añade el usuario al adaptador si no está o se devuelve si ya está
-        else:
-            raise IceDrive.Unauthorized() # Se lanza una excepción
-        return IceDrive.UserPrx.uncheckedCast(newUser_prx) # Se devuelve el usuario
+        self.publish_authentication_topic(username,password)
 
     def newUser(
         self, username: str, password: str, current: Ice.Current = None
@@ -127,3 +128,14 @@ class Authentication(IceDrive.Authentication):
             newUser_prx=self.users_prx[index]
             self.users[index].refresh() # Se actualiza el último refresh del usuario 
         return newUser_prx
+    
+
+    def publish_authentication_topic(self,username,password):
+        """Publish the authentication topic."""
+        future = Ice.Future()
+        response = AuthenticationQueryResponse(future,self)
+        response_prx = self.adapter.addWithUUID(response)
+        response_prx = IceDrive.AuthenticationQueryResponsePrx.checkedCast(response_prx)
+        self.expected_responses[response_prx.ice_getIdentity()] = response_prx
+        self.authenticationQuery_prx.login(username,password,response_prx)
+        

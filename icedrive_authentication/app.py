@@ -1,28 +1,81 @@
 """Authentication service application."""
 
+import threading
 import time
 import os
 from typing import List
 from .authentication import Authentication
+from .delayed_response import AuthenticationQuery
+from .discovery import Discovery
 
 import Ice
+import IceStorm
 Ice.loadSlice("icedrive_authentication/icedrive.ice")
 import IceDrive # noqa
 
 class AuthenticationApp(Ice.Application):
     """Implementation of the Ice.Application for the Authentication service."""
+    
+    def enviar_anuncio_discovery(self, publisher, auth_prx):
+        while True:
+            publisher.announceAuthentication(auth_prx)
+            time.sleep(5)
+
+    def get_topic(self, property):
+        """Suscribe to the discovery topic."""
+        topic_name = self.communicator().getProperties().getProperty(property)
+        topic_manager = IceStorm.TopicManagerPrx.checkedCast(self.communicator().propertyToProxy("IceStorm.TopicManager.Proxy"))
+        try:
+            topic = topic_manager.retrieve(topic_name)
+        except IceStorm.NoSuchTopic:
+            topic = topic_manager.create(topic_name)
+        return topic
+
+    def suscribe_discovery_topic(self, adapter, auth_prx):
+        """Suscribe to the discovery topic."""
+        discovery_subscriber = Discovery(auth_prx)
+        discovery_prx_subscriber = adapter.addWithUUID(discovery_subscriber)
+        topic_discovery = self.get_topic("DiscoveryTopic")
+        topic_discovery.subscribeAndGetPublisher({}, discovery_prx_subscriber)
+
+    def suscribe_authenticationQuery_topic(self, adapter):
+        """Suscribe to the discovery topic."""
+        authenticationQuery_subscriber = AuthenticationQuery()
+        authenticationQuery_prx_subscriber = adapter.addWithUUID(authenticationQuery_subscriber)
+        topic_discovery = self.get_topic("AuthenticationQueryTopic")
+        topic_discovery.subscribeAndGetPublisher({}, authenticationQuery_prx_subscriber)
+
+    def publish_discovery_topic(self, auth_prx):
+        """Publish the discovery topic."""
+        topic_discovery = self.get_topic("DiscoveryTopic")
+        discovery_publisher = IceDrive.DiscoveryPrx.uncheckedCast(topic_discovery.getPublisher())
+        thread = threading.Thread(target=self.enviar_anuncio_discovery, args=(discovery_publisher, auth_prx))
+        thread.start()
 
     def run(self, args: List[str]) -> int:
         """Execute the code for the AuthentacionApp class."""
+
         adapter=self.communicator().createObjectAdapter("AuthenticationAdapter")
         adapter.activate()
 
-        servant=Authentication()
+        topic_authenticationQuery = self.get_topic("AuthenticationQueryTopic")
+        authenticationQuery_publisher = IceDrive.AuthenticationQueryPrx.uncheckedCast(topic_authenticationQuery.getPublisher())
+
+        servant=Authentication(authenticationQuery_publisher, adapter)
         servant_prx=adapter.addWithUUID(servant)
+        servant_prx = IceDrive.AuthenticationPrx.uncheckedCast(servant_prx)
+
         print("Running Authentication service")
         print(f"Proxy: {servant_prx}")
         with open(os.path.join('config','client.txt'), 'w') as f:
             f.write(str(servant_prx))
+        
+        # Suscribe to the discovery topic
+        self.suscribe_discovery_topic(adapter, servant_prx)
+        # Publish the discovery topic
+        self.publish_discovery_topic(servant_prx)
+        # Suscribe to the authenticationQuery topic
+        self.suscribe_authenticationQuery_topic(adapter)
 
         self.shutdownOnInterrupt()
         self.communicator().waitForShutdown()
@@ -47,6 +100,7 @@ class ClientApp(Ice.Application):
         user3_login=auth_prx.login("user3","pass3")
         print(f"Comprobación de que los proxies de creación y de login son iguales: {user3==user3_login}\n") # Además, el proxy devuelto es el mismo que el del usuario creado anteriormente
 
+        """
         # Requisito 2 (Un cliente con credenciales inválidas al hacer "login" es rechazado)
         try:
             print("Requisito 2\n Intentando hacer login con credenciales inválidas")
@@ -134,6 +188,6 @@ class ClientApp(Ice.Application):
         except Ice.ObjectNotExistException:
             print("Req 14 --> Error. El usuario ya no existe, por lo que no puede llamar ningún método")
 
-
+        """
         return 0
     

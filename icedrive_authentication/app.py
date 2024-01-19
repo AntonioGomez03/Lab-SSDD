@@ -93,9 +93,6 @@ class ClientApp(Ice.Application):
         if not auth_prx:
             print(f"Proxy {prx} is invalid")
             return 2
-        
-        print(auth_prx.removeUser("user3","pass3"))
-        print(auth_prx.removeUser("user10","user10"))
 
         # Requisito 1 (Un cliente puede hacer "login" con credenciales válidas y un UserPrx es devuelto)
         print("Requisito 1\n Creando el usuario con username: user3 y password: pass3")

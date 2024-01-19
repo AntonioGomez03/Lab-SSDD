@@ -64,7 +64,6 @@ class AuthenticationI(IceDrive.Authentication):
     """Implementation of an IceDrive.Authentication interface."""
     def __init__(self, authenticationQuery_prx, adapter, authentication):
         self.authentication = authentication
-        print(authentication)
         self.authenticationQuery_prx=authenticationQuery_prx
         self.adapter = adapter
         self.expected_responses = {}
@@ -77,7 +76,6 @@ class AuthenticationI(IceDrive.Authentication):
             user_prx = self.authentication.login(username,password,current)
             return user_prx
         except IceDrive.Unauthorized:
-            print("Expcepción lanzada")
             response_prx = self.prepare_amd_response_callback(current)
             self.authenticationQuery_prx.login(username,password,response_prx)
             return self.expected_responses[response_prx.ice_getIdentity()]
@@ -112,29 +110,8 @@ class AuthenticationI(IceDrive.Authentication):
         if not verified: # Si no pertenece
             response_prx = self.prepare_amd_response_callback(current)
             self.authenticationQuery_prx.verifyUser(user,response_prx)
-            print("No pertenece")
             verified = self.expected_responses[response_prx.ice_getIdentity()] # Se espera a la respuesta
-            print(verified)
         return verified
-    
-    def __userInUsersList(self,user)->bool:
-        existe=False
-        for u in self.users:
-            if u.getUsername()==user.getUsername() and u.getPassword()==user.getPassword():
-                existe=True
-        return existe
-    
-    def __getOrAddUserProxy(self,user, adapter) :
-        newUser_prx=None
-        if not self.__userInUsersList(user):
-            self.users.append(user) # Se añade el usuario a la lista de usuarios
-            newUser_prx=adapter.addWithUUID(user) # Se añade el usuario al adaptador
-            self.users_prx.append(newUser_prx) # Se añade el usuario a la lista de usuarios del adaptador
-        else:
-            index = next(i for i, u in enumerate(self.users) if u.getUsername() == user.getUsername() and u.getPassword() == user.getPassword())
-            newUser_prx=self.users_prx[index]
-            self.users[index].refresh() # Se actualiza el último refresh del usuario 
-        return newUser_prx
     
     def remove_object_if_exists(self, adapter: Ice.ObjectAdapter, identity: Ice.Identity) -> None:
         """Remove an object from the adapter if exists."""
@@ -227,3 +204,6 @@ class Authentication():
             newUser_prx=self.users_prx[index]
             self.users[index].refresh() # Se actualiza el último refresh del usuario 
         return newUser_prx
+    
+    def userExists(self, username):
+        return jm.exist_username(username,users_file)

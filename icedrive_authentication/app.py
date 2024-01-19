@@ -94,17 +94,8 @@ class ClientApp(Ice.Application):
             print(f"Proxy {prx} is invalid")
             return 2
         
-        #auth_prx.newUser("user3","pass3")
-        #auth_prx.login("user4","pass4")
-        
-        a=auth_prx.login("user5","pass5")
-        print(a)
-        time.sleep(2)
-        #auth_prx.removeUser("user5","pass5")
-        print(auth_prx.verifyUser(a))
-        #auth_prx.login("user5","pass5")
-        print("Login correcto")
-        time.sleep(5)
+        print(auth_prx.removeUser("user3","pass3"))
+        print(auth_prx.removeUser("user10","user10"))
 
         # Requisito 1 (Un cliente puede hacer "login" con credenciales válidas y un UserPrx es devuelto)
         print("Requisito 1\n Creando el usuario con username: user3 y password: pass3")
@@ -142,7 +133,7 @@ class ClientApp(Ice.Application):
         # Requisito 5 (Un cliente puede eliminar su usuario con "removeUser")
         print("Requisito 5\n Eliminando el usuario con username y password correctos\n")
         auth_prx.removeUser("user1","pass1") 
-        """
+        
         # Requisito 7 (El método "verifyUser" devuelve verdadero para un UserPrx creado a través de "login" o "newUser")
         print(f"Requisito 7\n Verificando usuario creado por Authenticator: {auth_prx.verifyUser(user3)}\n") 
 
@@ -200,6 +191,6 @@ class ClientApp(Ice.Application):
         except Ice.ObjectNotExistException:
             print("Req 14 --> Error. El usuario ya no existe, por lo que no puede llamar ningún método")
 
-        """
+        
         return 0
     

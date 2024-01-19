@@ -17,13 +17,24 @@ class AuthenticationQueryResponse(IceDrive.AuthenticationQueryResponse):
         """Receive an User when other service instance knows about it and credentials are correct."""
         print(f" Respuesta desde el AuthenticationQueryResponse. ---> {user}")
         self.future.set_result(user)
+        current.adapter.remove(current.id)
+
+    def userExists(self, current: Ice.Current = None) -> None:   
+        print(" Respuesta desde el AuthenticationQueryResponse. ---> Usuario existe")
+        self.future.set_result(True)
+        current.adapter.remove(current.id)
+        self.future.set_exception(IceDrive.UserAlreadyExistsException())
+
     def userRemoved(self, current: Ice.Current = None) -> None:
         """Receive an invocation when other service instance knows the user and removed it."""
         print(" Respuesta desde el AuthenticationQueryResponse. ---> Usuario eliminado")
         self.future.set_result(True)
+        current.adapter.remove(current.id)
+
     def verifyUserResponse(self, result: bool, current: Ice.Current = None) -> None:
         """Receive a boolean when other service instance is owner of the `user`."""
         self.future.set_result(result)
+        current.adapter.remove(current.id)
 
 class AuthenticationQuery(IceDrive.AuthenticationQuery):
     """Query receiver.""" 
@@ -38,6 +49,12 @@ class AuthenticationQuery(IceDrive.AuthenticationQuery):
             response.loginResponse(user_prx)
         except Exception:
             pass
+
+    def doesUserExist(self, username, response):
+        print("Recibido un doesUserExist desde el AuthenticationQuery")
+        if self.authentication.userExists(username):
+            response.userExists()
+
     def removeUser(self, username: str, password: str, response: IceDrive.AuthenticationQueryResponsePrx, current: Ice.Current = None) -> None:
         """Receive a query about an user to be removed."""
         print("Recibido un removeUser desde el AuthenticationQuery")

@@ -1,5 +1,6 @@
 """Servant implementation for the delayed response mechanism."""
 
+import time
 from .json_manager import JsonManager as jm
 import Ice
 Ice.loadSlice("icedrive_authentication/icedrive.ice")
@@ -50,10 +51,12 @@ class AuthenticationQuery(IceDrive.AuthenticationQuery):
         except Exception:
             pass
 
-    def doesUserExist(self, username, response):
+    def doesUserExist(self, username, response, current: Ice.Current = None):
         print("Recibido un doesUserExist desde el AuthenticationQuery")
         if self.authentication.userExists(username):
+            print("El usuario existe")
             response.userExists()
+        print("El usuario no existe")
 
     def removeUser(self, username: str, password: str, response: IceDrive.AuthenticationQueryResponsePrx, current: Ice.Current = None) -> None:
         """Receive a query about an user to be removed."""

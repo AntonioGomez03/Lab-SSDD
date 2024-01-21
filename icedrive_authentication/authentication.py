@@ -84,11 +84,12 @@ class AuthenticationI(IceDrive.Authentication):
         self, username: str, password: str, current: Ice.Current = None
     ) ->  IceDrive.UserPrx:
         """Create an user with username and the given password."""
-        try:
-            user_prx = self.authentication.newUser(username,password,current)
-            return user_prx
-        except IceDrive.UserAlreadyExists:
+        if self.authentication.userExists(username):
             raise IceDrive.UserAlreadyExists()
+
+        response_prx = self.prepare_amd_response_callback(current,default_action=lambda: self.authentication.createUser(username,password,self.adapter))
+        self.authenticationQuery_prx.doesUserExist(username,response_prx)
+        return self.expected_responses[response_prx.ice_getIdentity()]
 
     def removeUser(
         self, username: str, password: str, current: Ice.Current = None
@@ -114,7 +115,7 @@ class AuthenticationI(IceDrive.Authentication):
         return verified
     
     def remove_object_if_exists(
-        self, adapter: Ice.ObjectAdapter, identity: Ice.Identity, exception=None, default_result=None
+        self, adapter: Ice.ObjectAdapter, identity: Ice.Identity, exception=None, default_result=None, default_action=None
     ) -> None:
         """Remove an object from the adapter if it exists."""
         if adapter.find(identity) is not None:
@@ -123,10 +124,14 @@ class AuthenticationI(IceDrive.Authentication):
                 self.expected_responses[identity].set_exception(exception)
             elif default_result is not None:
                 self.expected_responses[identity].set_result(default_result)
+            elif default_action is not None:
+                user_prx=default_action()
+                user_prx = IceDrive.UserPrx.checkedCast(user_prx)
+                self.expected_responses[identity].set_result(user_prx)
 
         del self.expected_responses[identity]
 
-    def prepare_amd_response_callback(self, current, exception=None, default_result=None):
+    def prepare_amd_response_callback(self, current, exception=None, default_result=None, default_action=None):
         """Publish the authentication topic."""
         future = Ice.Future()
         response = AuthenticationQueryResponse(future)
@@ -138,7 +143,9 @@ class AuthenticationI(IceDrive.Authentication):
         if exception is not None:
             args += (exception,)
         elif default_result is not None:
-            args += (default_result,)
+            args += (None,default_result,)
+        elif default_action is not None:
+            args += (None, None,default_action,)
 
         threading.Timer(5.0, self.remove_object_if_exists, args).start()
 
@@ -172,9 +179,7 @@ class Authentication():
         if jm.exist_username(username,users_file): # Se comprueba si el username ya existe
                 raise IceDrive.UserAlreadyExists()
         else:
-            user=User(username,password) 
-            jm.add_user(username,password,users_file) # Se añade el usuario al fichero de usuarios
-            newUser_prx=self.__getOrAddUserProxy(user,current.adapter) # Se añade el usuario al adaptador si no está o se devuelve si ya está
+            newUser_prx = self.createUser(username,password,current.adapter) # Se crea el usuario
 
         return IceDrive.UserPrx.uncheckedCast(newUser_prx) # Se devuelve el usuario
 
@@ -221,3 +226,8 @@ class Authentication():
     
     def userExists(self, username):
         return jm.exist_username(username,users_file)
+    
+    def createUser(self, username, password, adapter):
+        user=User(username,password) 
+        jm.add_user(username,password,users_file) # Se añade el usuario al fichero de usuarios
+        return self.__getOrAddUserProxy(user,adapter) # Se añade el usuario al adaptador si no está o se devuelve si ya está

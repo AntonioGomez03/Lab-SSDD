@@ -76,7 +76,7 @@ class AuthenticationI(IceDrive.Authentication):
             user_prx = self.authentication.login(username,password,current)
             return user_prx
         except IceDrive.Unauthorized:
-            response_prx = self.prepare_amd_response_callback(current, IceDrive.Unauthorized())
+            response_prx = self.prepare_amd_response_callback(current,exception=IceDrive.Unauthorized())
             self.authenticationQuery_prx.login(username,password,response_prx)
             return self.expected_responses[response_prx.ice_getIdentity()]
 
@@ -97,7 +97,7 @@ class AuthenticationI(IceDrive.Authentication):
         try:
             self.authentication.removeUser(username,password,current)
         except IceDrive.Unauthorized:
-            response_prx = self.prepare_amd_response_callback(current, IceDrive.Unauthorized())
+            response_prx = self.prepare_amd_response_callback(current, exception= IceDrive.Unauthorized())
             self.authenticationQuery_prx.removeUser(username,password,response_prx)
             return self.expected_responses[response_prx.ice_getIdentity()]
 
@@ -108,28 +108,42 @@ class AuthenticationI(IceDrive.Authentication):
         """
         verified = self.authentication.verifyUser(user,current) # Se comprueba si el usuario pertenece al servicio
         if not verified: # Si no pertenece
-            response_prx = self.prepare_amd_response_callback(current)
+            response_prx = self.prepare_amd_response_callback(current,default_result=False)
             self.authenticationQuery_prx.verifyUser(user,response_prx)
-            verified = self.expected_responses[response_prx.ice_getIdentity()] # Se espera a la respuesta
+            return self.expected_responses[response_prx.ice_getIdentity()] # Se espera a la respuesta
         return verified
     
-    def remove_object_if_exists(self, adapter: Ice.ObjectAdapter, identity: Ice.Identity, exception) -> None:
-        """Remove an object from the adapter if exists."""
+    def remove_object_if_exists(
+        self, adapter: Ice.ObjectAdapter, identity: Ice.Identity, exception=None, default_result=None
+    ) -> None:
+        """Remove an object from the adapter if it exists."""
         if adapter.find(identity) is not None:
             adapter.remove(identity)
-            self.expected_responses[identity].set_exception(exception)
+            if exception is not None:
+                self.expected_responses[identity].set_exception(exception)
+            elif default_result is not None:
+                self.expected_responses[identity].set_result(default_result)
 
         del self.expected_responses[identity]
 
-    def prepare_amd_response_callback(self,current, exception):
+    def prepare_amd_response_callback(self, current, exception=None, default_result=None):
         """Publish the authentication topic."""
         future = Ice.Future()
         response = AuthenticationQueryResponse(future)
         response_prx = self.adapter.addWithUUID(response)
         response_prx = IceDrive.AuthenticationQueryResponsePrx.checkedCast(response_prx)
         self.expected_responses[response_prx.ice_getIdentity()] = future
-        threading.Timer(5.0, self.remove_object_if_exists, (current.adapter, response_prx.ice_getIdentity(),exception)).start()
+
+        args = (current.adapter, response_prx.ice_getIdentity())
+        if exception is not None:
+            args += (exception,)
+        elif default_result is not None:
+            args += (default_result,)
+
+        threading.Timer(5.0, self.remove_object_if_exists, args).start()
+
         return response_prx
+
         
 
 

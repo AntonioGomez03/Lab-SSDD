@@ -66,5 +66,5 @@ class AuthenticationQuery(IceDrive.AuthenticationQuery):
     def verifyUser(self, user: IceDrive.UserPrx, response: IceDrive.AuthenticationQueryResponsePrx, current: Ice.Current = None) -> None:
         """Receive a query about an `User` to be verified."""
         print("Recibido un verifyUser desde el AuthenticationQuery")
-        verified = self.authentication.verifyUser(user,current)
-        response.verifyUserResponse(verified)
+        if(self.authentication.verifyUser(user,current) and user.isAlive()):
+            response.verifyUserResponse(True)

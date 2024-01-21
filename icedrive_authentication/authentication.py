@@ -99,7 +99,7 @@ class AuthenticationI(IceDrive.Authentication):
         except IceDrive.Unauthorized:
             response_prx = self.prepare_amd_response_callback(current, IceDrive.Unauthorized())
             self.authenticationQuery_prx.removeUser(username,password,response_prx)
-            
+            return self.expected_responses[response_prx.ice_getIdentity()]
 
     def verifyUser(self, user: IceDrive.UserPrx, current: Ice.Current = None) -> bool:
         """Check if the user belongs to this service.

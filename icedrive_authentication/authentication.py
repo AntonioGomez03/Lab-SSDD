@@ -76,7 +76,7 @@ class AuthenticationI(IceDrive.Authentication):
             user_prx = self.authentication.login(username,password,current)
             return user_prx
         except IceDrive.Unauthorized:
-            response_prx = self.prepare_amd_response_callback(current)
+            response_prx = self.prepare_amd_response_callback(current, IceDrive.Unauthorized())
             self.authenticationQuery_prx.login(username,password,response_prx)
             return self.expected_responses[response_prx.ice_getIdentity()]
 
@@ -97,7 +97,7 @@ class AuthenticationI(IceDrive.Authentication):
         try:
             self.authentication.removeUser(username,password,current)
         except IceDrive.Unauthorized:
-            response_prx = self.prepare_amd_response_callback(current)
+            response_prx = self.prepare_amd_response_callback(current, IceDrive.Unauthorized())
             self.authenticationQuery_prx.removeUser(username,password,response_prx)
             
 
@@ -113,22 +113,22 @@ class AuthenticationI(IceDrive.Authentication):
             verified = self.expected_responses[response_prx.ice_getIdentity()] # Se espera a la respuesta
         return verified
     
-    def remove_object_if_exists(self, adapter: Ice.ObjectAdapter, identity: Ice.Identity) -> None:
+    def remove_object_if_exists(self, adapter: Ice.ObjectAdapter, identity: Ice.Identity, exception) -> None:
         """Remove an object from the adapter if exists."""
         if adapter.find(identity) is not None:
             adapter.remove(identity)
-            self.expected_responses[identity].set_exception(IceDrive.Unauthorized())
+            self.expected_responses[identity].set_exception(exception)
 
         del self.expected_responses[identity]
 
-    def prepare_amd_response_callback(self,current):
+    def prepare_amd_response_callback(self,current, exception):
         """Publish the authentication topic."""
         future = Ice.Future()
         response = AuthenticationQueryResponse(future)
         response_prx = self.adapter.addWithUUID(response)
         response_prx = IceDrive.AuthenticationQueryResponsePrx.checkedCast(response_prx)
         self.expected_responses[response_prx.ice_getIdentity()] = future
-        threading.Timer(5.0, self.remove_object_if_exists, (current.adapter, response_prx.ice_getIdentity())).start()
+        threading.Timer(5.0, self.remove_object_if_exists, (current.adapter, response_prx.ice_getIdentity(),exception)).start()
         return response_prx
         
 
